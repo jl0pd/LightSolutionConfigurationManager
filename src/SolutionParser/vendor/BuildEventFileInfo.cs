@@ -12,15 +12,9 @@ namespace SolutionParser.Shared
     /// </summary>
     internal sealed class BuildEventFileInfo
     {
-        #region Constructors
+        internal static BuildEventFileInfo Empty = new BuildEventFileInfo(ElementLocation.EmptyLocation);
 
-        /// <summary>
-        /// Private default constructor disallows parameterless instantiation.
-        /// </summary>
-        private BuildEventFileInfo()
-        {
-            // do nothing
-        }
+        #region Constructors
 
         /// <summary>
         /// Creates an instance of this class using the given filename/path.
@@ -75,7 +69,7 @@ namespace SolutionParser.Shared
         internal BuildEventFileInfo(string file, int line, int column, int endLine, int endColumn)
         {
             // Projects that don't have a filename when the are built should use an empty string instead.
-            _file = (file == null) ? String.Empty : file;
+            _file = file ?? String.Empty;
             _line = line;
             _column = column;
             _endLine = endLine;
