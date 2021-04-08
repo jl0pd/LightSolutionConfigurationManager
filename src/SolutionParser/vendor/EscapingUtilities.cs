@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-using Microsoft.NET.StringTools;
-
 namespace SolutionParser.Shared
 {
     /// <summary>
@@ -172,7 +170,7 @@ namespace SolutionParser.Shared
                 return unescapedString;
             }
 
-            // next, if we're caching, check to see if it's already there.
+            //next, if we're caching, check to see if it's already there.
             if (cache)
             {
                 lock (s_unescapedToEscapedStrings)
@@ -195,7 +193,9 @@ namespace SolutionParser.Shared
                 return StringBuilderCache.GetStringAndRelease(escapedStringBuilder);
             }
 
-            string escapedString = Strings.WeakIntern(escapedStringBuilder.ToString());
+            string escapedString = escapedStringBuilder.ToString();
+            // TODO: should use line below
+            //string escapedString = Strings.WeakIntern(escapedStringBuilder.ToString());
             StringBuilderCache.Release(escapedStringBuilder);
 
             lock (s_unescapedToEscapedStrings)

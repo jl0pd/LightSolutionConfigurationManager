@@ -16,7 +16,6 @@ using ErrorUtilities = SolutionParser.Shared.ErrorUtilities;
 using VisualStudioConstants = SolutionParser.Shared.VisualStudioConstants;
 using ProjectFileErrorUtilities = SolutionParser.Shared.ProjectFileErrorUtilities;
 using BuildEventFileInfo = SolutionParser.Shared.BuildEventFileInfo;
-using ResourceUtilities = SolutionParser.Shared.ResourceUtilities;
 using ExceptionUtilities = SolutionParser.Shared.ExceptionHandling;
 using System.Collections.ObjectModel;
 using Microsoft.Build.Shared;

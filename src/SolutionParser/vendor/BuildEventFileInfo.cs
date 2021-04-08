@@ -4,6 +4,7 @@
 using System;
 using System.Xml;
 using System.Xml.Schema;
+using SolutionParser.Construction;
 
 namespace SolutionParser.Shared
 {

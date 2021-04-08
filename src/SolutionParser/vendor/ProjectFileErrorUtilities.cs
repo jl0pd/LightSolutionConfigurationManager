@@ -3,7 +3,7 @@
 
 using System;
 using System.Xml;
-
+using Microsoft.Build.Shared;
 using InvalidProjectFileException = SolutionParser.Exceptions.InvalidProjectFileException;
 
 namespace SolutionParser.Shared

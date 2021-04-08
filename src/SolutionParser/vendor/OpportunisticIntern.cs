@@ -39,8 +39,6 @@ namespace SolutionParser
     /// </summary>
     static internal class OpportunisticIntern
     {
-        private static readonly bool s_useSimpleConcurrency = Traits.Instance.UseSimpleInternConcurrency;
-
         /// <summary>
         /// The size of the small mru list.
         /// </summary>
@@ -80,7 +78,7 @@ namespace SolutionParser
         /// <summary>
         /// Manages the separate MRU lists.
         /// </summary>
-        private static BucketedPrioritizedStringList s_si = new BucketedPrioritizedStringList(/*gatherStatistics*/ false, s_smallMruSize, s_largeMruSize, s_hugeMruSize, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold, s_useSimpleConcurrency);
+        private static BucketedPrioritizedStringList s_si = new BucketedPrioritizedStringList(/*gatherStatistics*/ false, s_smallMruSize, s_largeMruSize, s_hugeMruSize, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold);
 
         #region Statistics
         /// <summary>
@@ -164,11 +162,11 @@ namespace SolutionParser
         internal static void EnableStatisticsGathering()
         {
             // Statistics include several 'what if' scenarios such as doubling the size of the MRU lists.
-            s_si = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, s_smallMruSize, s_largeMruSize, s_hugeMruSize, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold, s_useSimpleConcurrency);
-            s_whatIfInfinite = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, Int32.MaxValue, Int32.MaxValue, Int32.MaxValue, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold, s_useSimpleConcurrency);
-            s_whatIfDoubled = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, s_smallMruSize * 2, s_largeMruSize * 2, s_hugeMruSize * 2, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold, s_useSimpleConcurrency);
-            s_whatIfHalved = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, s_smallMruSize / 2, s_largeMruSize / 2, s_hugeMruSize / 2, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold, s_useSimpleConcurrency);
-            s_whatIfZero = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, 0, 0, 0, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold, s_useSimpleConcurrency);
+            s_si = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, s_smallMruSize, s_largeMruSize, s_hugeMruSize, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold);
+            s_whatIfInfinite = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, Int32.MaxValue, Int32.MaxValue, Int32.MaxValue, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold);
+            s_whatIfDoubled = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, s_smallMruSize * 2, s_largeMruSize * 2, s_hugeMruSize * 2, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold);
+            s_whatIfHalved = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, s_smallMruSize / 2, s_largeMruSize / 2, s_hugeMruSize / 2, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold);
+            s_whatIfZero = new BucketedPrioritizedStringList(/*gatherStatistics*/ true, 0, 0, 0, s_smallMruThreshhold, s_largeMruThreshhold, s_hugeMruThreshhold, s_ginormousThreshhold);
         }
 
         /// <summary>
@@ -654,7 +652,7 @@ namespace SolutionParser
             /// <summary>
             /// Construct.
             /// </summary>
-            internal BucketedPrioritizedStringList(bool gatherStatistics, int smallMruSize, int largeMruSize, int hugeMruSize, int smallMruThreshhold, int largeMruThreshhold, int hugeMruThreshhold, int ginormousThreshhold, bool useSimpleConcurrency)
+            internal BucketedPrioritizedStringList(bool gatherStatistics, int smallMruSize, int largeMruSize, int hugeMruSize, int smallMruThreshhold, int largeMruThreshhold, int hugeMruThreshhold, int ginormousThreshhold)
             {
                 if (smallMruSize == 0 && largeMruSize == 0 && hugeMruSize == 0)
                 {
@@ -668,7 +666,6 @@ namespace SolutionParser
                 _largeMruThreshhold = largeMruThreshhold;
                 _hugeMruThreshhold = hugeMruThreshhold;
                 _ginormousThreshhold = ginormousThreshhold;
-                _useSimpleConcurrency = useSimpleConcurrency;
 
                 for (int i = 0; i < _ginormousSize; i++)
                 {

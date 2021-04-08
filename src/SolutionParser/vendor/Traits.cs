@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Microsoft.Build.Shared;
 using SolutionParser.Shared;
 
 namespace SolutionParser.Utilities
@@ -94,8 +95,6 @@ namespace SolutionParser.Utilities
                 ? result
                 : defaultValue;
         }
-
-        public readonly bool EnableAllPropertyFunctions = Environment.GetEnvironmentVariable("MSBUILDENABLEALLPROPERTYFUNCTIONS") == "1";
     }
 
     internal class EscapeHatches
@@ -120,8 +119,6 @@ namespace SolutionParser.Utilities
         /// Always use the accurate-but-slow CreateFile approach to timestamp extraction.
         /// </summary>
         public readonly bool AlwaysUseContentTimestamp = Environment.GetEnvironmentVariable("MSBUILDALWAYSCHECKCONTENTTIMESTAMP") == "1";
-
-        public readonly bool LogProjectImports = Environment.GetEnvironmentVariable("MSBUILDLOGIMPORTS") == "1";
 
         /// <summary>
         /// Truncate task inputs when logging them. This can reduce memory pressure

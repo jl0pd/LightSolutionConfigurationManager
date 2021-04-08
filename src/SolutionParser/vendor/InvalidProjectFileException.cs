@@ -11,6 +11,7 @@ using System.Security.Permissions;
 
 using SolutionParser.Shared;
 using SolutionParser.Evaluation;
+using Microsoft.Build.Shared;
 
 namespace SolutionParser.Exceptions
 {

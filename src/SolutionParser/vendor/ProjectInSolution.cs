@@ -16,6 +16,7 @@ using BuildEventFileInfo = SolutionParser.Shared.BuildEventFileInfo;
 using ErrorUtilities = SolutionParser.Shared.ErrorUtilities;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Microsoft.Build.Shared;
 
 namespace SolutionParser.Construction
 {
@@ -330,7 +331,7 @@ namespace SolutionParser.Construction
                     // namespace.
                     bool emptyNamespace = string.IsNullOrEmpty(mainProjectElement.NamespaceURI);
                     bool defaultNamespace = String.Equals(mainProjectElement.NamespaceURI,
-                                                XMakeAttributes.defaultXmlNamespace,
+                                                "http://schemas.microsoft.com/developer/msbuild/2003",
                                                 StringComparison.OrdinalIgnoreCase);
                     bool projectElementInvalid = ElementContainsInvalidNamespaceDefitions(mainProjectElement);
 
