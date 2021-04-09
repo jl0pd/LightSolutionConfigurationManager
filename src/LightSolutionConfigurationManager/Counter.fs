@@ -7,6 +7,9 @@ open Elmish
 open Avalonia
 open Avalonia.Controls.ApplicationLifetimes
 open SolutionParser.Construction
+open Avalonia.Layout
+open Avalonia.FuncUI.Components
+open Avalonia.Controls.Primitives
 
 type State =
     | SolutionNotSelected
@@ -57,16 +60,49 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
     | FileNotSelected 
     | FileSaved -> state, Cmd.none
 
-let view (state: State) (dispatch) =
-    StackPanel.create [
-        StackPanel.children [
-            Button.create [
-                Button.content "Pick file"
-                Button.onClick (fun _ -> dispatch SelectFile)
+let projectView project index dispatch =
+    DockPanel.create [
+        DockPanel.children [
+            TextBlock.create [
+                TextBlock.verticalAlignment VerticalAlignment.Center
+                TextBlock.text project.Name
             ]
-            Button.create [
-                Button.content "Save file"
-                Button.onClick (fun _ -> dispatch SaveFile)
+        ]
+    ]
+
+let view (state: State) dispatch =
+    let topPanel = 
+        StackPanel.create [
+            StackPanel.dock Dock.Top
+            StackPanel.orientation Orientation.Horizontal
+            StackPanel.children [
+                Button.create [
+                    Button.content "Load file"
+                    Button.onClick (fun _ -> dispatch SelectFile)
+                ]
+                Button.create [
+                    Button.content "Save file"
+                    Button.onClick (fun _ -> dispatch SaveFile)
+                ]
             ]
+        ]
+
+    let projects =
+        match state with
+        | SolutionNotSelected -> ListBox.create []
+        | SolutionIsLoaded sln -> 
+                ListBox.create [
+                    ListBox.horizontalScrollBarVisibility ScrollBarVisibility.Disabled
+
+                    ListBox.dataItems <| List.indexed sln.ProjectsInOrder
+                    ListBox.itemTemplate 
+                        (DataTemplateView<(int * Project)>.create
+                            (fun (i, p) -> projectView p i dispatch))
+                ]
+
+    DockPanel.create [
+        DockPanel.children [
+            topPanel
+            projects
         ]
     ]
