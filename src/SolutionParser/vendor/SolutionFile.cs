@@ -103,6 +103,8 @@ namespace SolutionParser.Construction
         // The list of projects in the SLN, in order of their appearance in the SLN.
         private List<ProjectInSolution> _projectsInOrder;
 
+        private List<string> _nestedProjectsInOrder;
+
         // The list of solution configurations in the solution
         private List<SolutionConfigurationInSolution> _solutionConfigurations;
 
@@ -112,8 +114,6 @@ namespace SolutionParser.Construction
         // cached default platform name for GetDefaultPlatformName
         private string _defaultPlatformName;
 
-        // VisualStudionVersion specified in Dev12+ solutions
-        private Version _currentVisualStudioVersion;
         private int _currentLineNumber;
 
         #endregion
@@ -149,7 +149,13 @@ namespace SolutionParser.Construction
         /// <summary>
         /// Returns the actual major version of the parsed solution file
         /// </summary>
-        internal int Version { get; private set; }
+        public int Version { get; private set; }
+
+        public string SolutionGuid { get; private set; }
+
+        // VisualStudionVersion specified in Dev12+ solutions
+        public Version VisualStudioVersionExact { get; private set; }
+        public Version MinimumVisualStudioVersionExact { get; private set; }
 
         /// <summary>
         /// Returns Visual Studio major version
@@ -158,9 +164,9 @@ namespace SolutionParser.Construction
         {
             get
             {
-                if (_currentVisualStudioVersion != null)
+                if (VisualStudioVersionExact != null)
                 {
-                    return _currentVisualStudioVersion.Major;
+                    return VisualStudioVersionExact.Major;
                 }
                 else
                 {
@@ -185,6 +191,8 @@ namespace SolutionParser.Construction
         /// </summary>
         public IReadOnlyList<ProjectInSolution> ProjectsInOrder => _projectsInOrder.AsReadOnly();
 
+        public IReadOnlyList<string> NestedProjectsInOrder => _nestedProjectsInOrder.AsReadOnly();
+
         /// <summary>
         /// The collection of projects in this solution, accessible by their guids as a
         /// string in "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}" form
@@ -194,7 +202,7 @@ namespace SolutionParser.Construction
         /// <summary>
         /// This is the read accessor for the solution filter file, if present. Set through FullPath.
         /// </summary>
-        internal string SolutionFilterFilePath { get => _solutionFilterFile; }
+        internal string SolutionFilterFilePath => _solutionFilterFile;
 
         /// <summary>
         /// This is the read/write accessor for the solution file which we will parse.  This
@@ -487,7 +495,7 @@ namespace SolutionParser.Construction
             }
             catch (Exception e)
             {
-                ProjectFileErrorUtilities.VerifyThrowInvalidProjectFile(!ExceptionUtilities.IsIoRelatedException(e), new BuildEventFileInfo(_solutionFile), "InvalidProjectFile", e.Message);
+                //ProjectFileErrorUtilities.VerifyThrowInvalidProjectFile(!ExceptionUtilities.IsIoRelatedException(e), new BuildEventFileInfo(_solutionFile), "InvalidProjectFile", e.Message);
                 throw;
             }
             finally
@@ -505,6 +513,7 @@ namespace SolutionParser.Construction
         {
             _projects = new Dictionary<string, ProjectInSolution>(StringComparer.OrdinalIgnoreCase);
             _projectsInOrder = new List<ProjectInSolution>();
+            _nestedProjectsInOrder = new List<string>();
             ContainsWebProjects = false;
             Version = 0;
             _currentLineNumber = 0;
@@ -538,7 +547,15 @@ namespace SolutionParser.Construction
                 }
                 else if (str.StartsWith("VisualStudioVersion", StringComparison.Ordinal))
                 {
-                    _currentVisualStudioVersion = ParseVisualStudioVersion(str);
+                    VisualStudioVersionExact = ParseVisualStudioVersion(str);
+                }
+                else if (str.StartsWith("MinimumVisualStudioVersion", StringComparison.Ordinal))
+                {
+                    MinimumVisualStudioVersionExact = ParseVisualStudioVersion(str);
+                }
+                else if (str.StartsWith("GlobalSection(ExtensibilityGlobals)", StringComparison.Ordinal))
+                {
+                    ParseExtensibilityGlobals();
                 }
                 else
                 {
@@ -1289,6 +1306,7 @@ namespace SolutionParser.Construction
             proj.ProjectName = match.Groups["PROJECTNAME"].Value.Trim();
             proj.RelativePath = match.Groups["RELATIVEPATH"].Value.Trim();
             proj.ProjectGuid = match.Groups["PROJECTGUID"].Value.Trim();
+            proj.ProjectTypeGuid = projectTypeGuid;
 
             // If the project name is empty (as in some bad solutions) set it to some generated generic value.
             // This allows us to at least generate reasonable target names etc. instead of crashing.
@@ -1383,6 +1401,8 @@ namespace SolutionParser.Construction
                 string projectGuid = match.Groups["PROPERTYNAME"].Value.Trim();
                 string parentProjectGuid = match.Groups["PROPERTYVALUE"].Value.Trim();
 
+                _nestedProjectsInOrder.Add(projectGuid);
+
                 if (!_projects.TryGetValue(projectGuid, out ProjectInSolution proj))
                 {
                     ProjectFileErrorUtilities.VerifyThrowInvalidProjectFile(proj != null, "SubCategoryForSolutionParsingErrors",
@@ -1451,6 +1471,21 @@ namespace SolutionParser.Construction
             } while (true);
         }
 
+        private void ParseExtensibilityGlobals()
+        {
+            var line = ReadLine();
+            var match = Regex.Match(line, @"^SolutionGuid\s*=\s*(?<Guid>.*)$"); // evaluated once per solution file, so can aford no caching
+            if (match.Success)
+            {
+                SolutionGuid = match.Groups["Guid"].Value;
+            }
+            else
+            {
+                ProjectFileErrorUtilities.VerifyThrowInvalidProjectFile(false, "SubCategoryForSolutionParsingErrors",
+                    new BuildEventFileInfo(FullPath, _currentLineNumber, 0), "SolutionParseInvalidSolutionExtensibilityGlobals", line);
+            }
+        }
+
         /// <summary>
         /// Read project configurations in solution configurations section.
         /// </summary>
@@ -1516,7 +1551,6 @@ namespace SolutionParser.Construction
             // parts of the entry name string. This could lead to ambiguous results if we tried to parse
             // the entry name instead of constructing it and looking it up. Although it's pretty unlikely that
             // this would ever be a problem, it's safer to do it the same way VS IDE does it.
-            char[] configPlatformSeparators = new char[] { SolutionConfigurationInSolution.ConfigurationPlatformSeparator };
 
             foreach (ProjectInSolution project in _projectsInOrder)
             {

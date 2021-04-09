@@ -24,7 +24,7 @@ type MainWindow() as this =
 #endif
 
 
-        Program.mkSimple (fun () -> Counter.init) Counter.update Counter.view
+        Program.mkProgram Counter.init Counter.update Counter.view
         |> Program.withHost this
 #if DEBUG
         |> Program.withConsoleTrace

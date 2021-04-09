@@ -147,6 +147,8 @@ namespace SolutionParser.Construction
         /// </summary>
         public string ProjectName { get; internal set; }
 
+        public string ProjectTypeGuid { get; internal set; }
+
         /// <summary>
         /// The path to this project file, relative to the solution location
         /// </summary>

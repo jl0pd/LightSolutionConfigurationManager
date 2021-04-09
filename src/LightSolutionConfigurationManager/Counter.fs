@@ -2,43 +2,71 @@
 
 open Avalonia.Controls
 open Avalonia.FuncUI.DSL
-open Avalonia.Layout
+open FSharp.Control.Tasks
+open Elmish
+open Avalonia
+open Avalonia.Controls.ApplicationLifetimes
+open SolutionParser.Construction
 
-type State = { count : int }
-let init = { count = 0 }
+type State =
+    | SolutionNotSelected
+    | SolutionIsLoaded of Solution
 
-type Msg = Increment | Decrement | Reset
+type Msg =
+    | SelectFile
+    | FileSelected of string
+    | FileNotSelected
+    | SaveFile
+    | FileSaved
 
-let update (msg: Msg) (state: State) : State =
+let init () = SolutionNotSelected, Cmd.none
+
+let getMainWindow () = // TODO: move somewhere
+    (Application.Current.ApplicationLifetime :?> IClassicDesktopStyleApplicationLifetime).MainWindow
+
+let selectFileAsync () =
+    task { 
+        let dlg =  OpenFileDialog(AllowMultiple = false, Filters = ResizeArray [ FileDialogFilter(Name = "Solution file", Extensions = ResizeArray [ "sln" ] ) ])
+        let! files = dlg.ShowAsync (getMainWindow())
+        if files.Length > 0 then
+            return FileSelected files.[0]
+        else
+            return FileNotSelected
+    } |> Cmd.OfTask.result
+
+let saveFileAsync sln =
+    task {
+        let dlg = SaveFileDialog(DefaultExtension = "sln")
+        let! path = dlg.ShowAsync (getMainWindow())
+        Solution.saveToFile path sln
+        return FileSaved
+    } |> Cmd.OfTask.result
+
+let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
     match msg with
-    | Increment -> { state with count = state.count + 1 }
-    | Decrement -> { state with count = state.count - 1 }
-    | Reset -> init
+    | SelectFile -> 
+        state, selectFileAsync()
+    | SaveFile -> 
+        match state with
+        | SolutionIsLoaded sln -> state, saveFileAsync sln
+        | SolutionNotSelected -> state, Cmd.none
+    
+    | FileSelected p -> 
+        SolutionIsLoaded (SolutionFile.Parse p |> Solution.fromMSBuild), Cmd.none
+    
+    | FileNotSelected 
+    | FileSaved -> state, Cmd.none
 
 let view (state: State) (dispatch) =
-    DockPanel.create [
-        DockPanel.children [
+    StackPanel.create [
+        StackPanel.children [
             Button.create [
-                Button.dock Dock.Bottom
-                Button.onClick (fun _ -> dispatch Reset)
-                Button.content "reset"
+                Button.content "Pick file"
+                Button.onClick (fun _ -> dispatch SelectFile)
             ]
             Button.create [
-                Button.dock Dock.Bottom
-                Button.onClick (fun _ -> dispatch Decrement)
-                Button.content "-"
-            ]
-            Button.create [
-                Button.dock Dock.Bottom
-                Button.onClick (fun _ -> dispatch Increment)
-                Button.content "+"
-            ]
-            TextBlock.create [
-                TextBlock.dock Dock.Top
-                TextBlock.fontSize 48.0
-                TextBlock.verticalAlignment VerticalAlignment.Center
-                TextBlock.horizontalAlignment HorizontalAlignment.Center
-                TextBlock.text (string state.count)
+                Button.content "Save file"
+                Button.onClick (fun _ -> dispatch SaveFile)
             ]
         ]
     ]

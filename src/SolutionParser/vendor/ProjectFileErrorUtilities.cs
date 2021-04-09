@@ -148,14 +148,14 @@ namespace SolutionParser.Shared
         {
             ErrorUtilities.VerifyThrow(projectFile != null, "Must specify the invalid project file. If project file is not available, use VerifyThrowInvalidProject() and pass in the XML node instead.");
 
-#if DEBUG
-            if (errorSubCategoryResourceName != null)
-            {
-                ResourceUtilities.VerifyResourceStringExists(errorSubCategoryResourceName);
-            }
+//#if DEBUG
+//            if (errorSubCategoryResourceName != null)
+//            {
+//                ResourceUtilities.VerifyResourceStringExists(errorSubCategoryResourceName);
+//            }
 
-            ResourceUtilities.VerifyResourceStringExists(resourceName);
-#endif
+//            ResourceUtilities.VerifyResourceStringExists(resourceName);
+//#endif
             if (!condition)
             {
                 string errorSubCategory = null;
