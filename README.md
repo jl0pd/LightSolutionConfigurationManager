@@ -59,3 +59,8 @@ dotnet build
 ```
 
 Building from solution file is also supported!
+
+Screenshots
+-----------
+
+![Window](.github/Window.png)
