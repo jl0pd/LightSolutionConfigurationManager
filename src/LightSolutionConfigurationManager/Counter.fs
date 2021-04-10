@@ -34,6 +34,7 @@ type Msg =
     | FileSelected of string
     | ConfigurationSelected of SolutionConfiguration
     | ChangeIncludeInBuild of int * bool
+    | ChangeAllIncludeInBuild of int * bool
     | FileNotSelected
     | SaveFile
     | FileSaved
@@ -76,14 +77,14 @@ let patchProject map index (projects: Project list) =
         | x :: xs -> inner (i - 1) (x :: acc) xs
     inner index [] projects |> List.rev
 
-let changeIncludeInBuild index isIncluded (selectedCfg: SolutionConfiguration) projects =
+let changeIncludeInBuild' index isIncluded shouldChange projects =
     patchProject
         (fun p ->
             let newCfgs =
                 p.Configurations
                 |> Seq.map
                     (fun (KeyValue (k, c)) ->
-                        if k = selectedCfg.FullName
+                        if shouldChange k
                         then (k, { c with IncludeInBuild = isIncluded })
                         else (k, c))
                 |> Map.ofSeq
@@ -91,6 +92,13 @@ let changeIncludeInBuild index isIncluded (selectedCfg: SolutionConfiguration) p
         )
         index
         projects
+
+let changeIncludeInBuild index isIncluded (solutionCfg: SolutionConfiguration) projects =
+    changeIncludeInBuild' index isIncluded (fun s -> s = solutionCfg.FullName) projects
+
+let changeAllIncludeInBuild index isIncluded projects =
+    changeIncludeInBuild' index isIncluded (fun _ -> true) projects
+
 
 let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
     match msg with
@@ -114,6 +122,13 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
         | SolutionNotSelected -> state, Cmd.none
         | SolutionIsLoaded sln ->
             let patched = changeIncludeInBuild index isIncluded sln.SelectedConfiguration sln.Solution.ProjectsInOrder
+            SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
+
+    | ChangeAllIncludeInBuild (index, isIncluded) ->
+        match state with
+        | SolutionNotSelected -> state, Cmd.none
+        | SolutionIsLoaded sln ->
+            let patched = changeAllIncludeInBuild index isIncluded sln.Solution.ProjectsInOrder
             SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
 
     | FileNotSelected
@@ -162,16 +177,16 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (index: 
                         CheckBox.margin 5.
                         CheckBox.content "build in all configurations"
                         CheckBox.isChecked allBuild
-                        CheckBox.onUnchecked ((fun e -> ()), SubPatchOptions.OnChangeOf index)
-                        CheckBox.onChecked  ((fun e -> ()), SubPatchOptions.OnChangeOf index)
+                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeAllIncludeInBuild (index, false))), OnChangeOf index)
+                        CheckBox.onChecked  ((fun _ -> dispatch (ChangeAllIncludeInBuild (index, true))), OnChangeOf index)
                     ]
 
                     CheckBox.create [
                         CheckBox.margin 5.
                         CheckBox.content "build"
                         CheckBox.isChecked projCfg.IncludeInBuild
-                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, false))), SubPatchOptions.OnChangeOf index)
-                        CheckBox.onChecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, true))), SubPatchOptions.OnChangeOf index)
+                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, false))), OnChangeOf index)
+                        CheckBox.onChecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, true))), OnChangeOf index)
                     ]
                 ]
             ]
