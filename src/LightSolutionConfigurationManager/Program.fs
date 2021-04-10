@@ -13,7 +13,7 @@ type MainWindow() as this =
     inherit HostWindow()
     do
         base.Title <- "LightSolutionConfigurationManager"
-        base.Width <- 400.0
+        base.Width <- 600.0
         base.Height <- 400.0
 
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
@@ -26,9 +26,6 @@ type MainWindow() as this =
 
         Program.mkProgram Counter.init Counter.update Counter.view
         |> Program.withHost this
-#if DEBUG
-        |> Program.withConsoleTrace
-#endif
         |> Program.run
 
 

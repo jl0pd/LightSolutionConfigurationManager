@@ -1,8 +1,9 @@
 namespace LightSolutionConfigurationManager
 
 open System
-open SolutionParser.Construction
+open System.Diagnostics
 open Microsoft.FSharp.Core.Printf
+open SolutionParser.Construction
 
 [<Struct>]
 type GuidString = GuidString of string
@@ -14,7 +15,7 @@ module GuidString =
 type GuidString with
     member g.Value = GuidString.value g
 
-
+[<DebuggerDisplay("{FullName}")>]
 type SolutionConfiguration =
     { Configuration: string
       Platform: string }
@@ -35,6 +36,7 @@ type SolutionConfiguration with
     member c.FullName = SolutionConfiguration.fullName c
 
 
+[<DebuggerDisplay("{Configuration}: build {IncludeInBuild}")>]
 type ProjectConfiguration =
     { Configuration: SolutionConfiguration
       IncludeInBuild: bool }
@@ -49,6 +51,9 @@ module ProjectConfiguration =
           Configuration =
               { Configuration = cfg.ConfigurationName
                 Platform = cfg.PlatformName } }
+
+    let configuration cfg =
+        cfg.Configuration
 
 type ProjectConfiguration with
     member c.FullName = ProjectConfiguration.fullName c
