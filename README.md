@@ -37,15 +37,21 @@ All features supported by VisualStudio's configuration manager including
 TODO
 ----
 
-* [x] **Feature:** Enable/disable build for all solution settings
-* [ ] **Feature:** Make projects `Configuration|Platform` corresponging to
+:heavy_check_mark: **Feature:** Enable/disable build for all solution settings
+
+:large_blue_circle: **Feature:** Make projects `Configuration|Platform` corresponging to
     solutions `Configuration|Platforms`
-* [ ] **Feature:** Change folder structure, so projects will be displayed according
+    
+:large_blue_circle: **Feature:** Change folder structure, so projects will be displayed according
       to file system folder structure
-* [ ] **Feature:** Move projects to be located same way as in solution explorer
-  * [ ] with git support
-* [ ] **UI-design:** Make application look better
-* [ ] **Repo-design:** Contribute changes to MSBuild [issue#1708](https://github.com/dotnet/msbuild/issues/1708)
+      
+:large_blue_circle: **Feature:** Move projects to be located same way as in solution explorer
+
+  :large_blue_circle: with git support
+  
+:large_blue_circle: **UI-design:** Make application look better
+
+:large_blue_circle: **Repo-design:** Contribute changes to MSBuild [issue#1708](https://github.com/dotnet/msbuild/issues/1708)
 
 Build
 -----
