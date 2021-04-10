@@ -1,27 +1,10 @@
-### Ported from: https://github.com/enricosada/sln
+SolutionParser
+==============
 
-WHY? no official sln parser avaiable
+Sources are taken from [Ionide.ProjInfo.Sln](https://github.com/ionide/proj-info/tree/master/src/Ionide.ProjInfo.Sln)
+repository and [MSBuild](https://github.com/dotnet/msbuild) repository.
 
-https://github.com/Microsoft/msbuild/issues/1708#issuecomment-280693611
+TODO
+----
 
-Reuse some source files from https://github.com/Microsoft/msbuild/ repo
-and reimplement some classes to not import too many files
-
-Original file list:
-
-```xml
-<Compile Include="..\..\vendor\msbuild\src\Shared\ErrorUtilities.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\VisualStudioConstants.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\Constants.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\Traits.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\BuildEventFileInfo.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\EscapingUtilities.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\StringBuilderCache.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\OpportunisticIntern.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Shared\ProjectFileErrorUtilities.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Build\Errors\InvalidProjectFileException.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Build\Construction\Solution\ProjectInSolution.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Build\Construction\Solution\SolutionConfigurationInSolution.cs" />
-<Compile Include="..\..\vendor\msbuild\src\Build\Construction\Solution\SolutionFile.cs" />
-```
+* Contribute these changes to MSBuild repository
