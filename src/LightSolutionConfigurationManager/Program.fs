@@ -14,7 +14,9 @@ type MainWindow() as this =
     do
         base.Title <- "LightSolutionConfigurationManager"
         base.Width <- 600.0
+        base.MinWidth <- 600.0
         base.Height <- 400.0
+        base.MinHeight <- 200.0
 
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true

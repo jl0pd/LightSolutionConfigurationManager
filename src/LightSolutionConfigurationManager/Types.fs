@@ -26,11 +26,11 @@ module SolutionConfiguration =
         if String.IsNullOrEmpty p then
             c
         else
-            sprintf "%s|%s" c (p.Replace("AnyCPU", "Any CPU"))
+            sprintf "%s|%s" c p
 
     let fromMSBuild (cfg: SolutionConfigurationInSolution) =
         { Configuration = cfg.ConfigurationName
-          Platform = cfg.PlatformName }
+          Platform = cfg.PlatformName.Replace("AnyCPU", "Any CPU") }
 
 type SolutionConfiguration with
     member c.FullName = SolutionConfiguration.fullName c
@@ -180,9 +180,10 @@ module Solution =
                 let sc = slnCfg.FullName
                 match proj.Configurations.TryGetValue sc with
                 | (true, cfg) ->
-                    writeLine $"\t\t%s{proj.ProjectGuid.Value}.%s{sc}.ActiveCfg = %s{cfg.FullName}"
+                    let cfgName = cfg.FullName.Replace("AnyCPU", "Any CPU")
+                    writeLine $"\t\t%s{proj.ProjectGuid.Value}.%s{sc}.ActiveCfg = %s{cfgName}"
                     if cfg.IncludeInBuild then
-                        writeLine $"\t\t%s{proj.ProjectGuid.Value}.%s{sc}.Build.0 = %s{cfg.FullName}"
+                        writeLine $"\t\t%s{proj.ProjectGuid.Value}.%s{sc}.Build.0 = %s{cfgName}"
                 | (false, _)  -> ()
 
         writeLine "\tEndGlobalSection"
@@ -230,6 +231,6 @@ module Solution =
         sb
 
     let saveToFile path sln =
-        use file = IO.File.OpenWrite path
+        use file = IO.File.Open(path, IO.FileMode.Create)
         use stream = new IO.StreamWriter(file, Text.Encoding.UTF8)
         saveTo stream.WriteLine sln

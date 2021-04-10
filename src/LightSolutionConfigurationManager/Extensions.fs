@@ -25,3 +25,11 @@ module List =
                 | ValueSome v -> inner (i + 1) (v :: acc) xs
                 | ValueNone -> inner (i + 1) acc xs
         inner 0 [] input |> List.rev
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module KeyValue =
+    open System.Collections.Generic
+
+    let value (kvp: KeyValuePair<_,_>) = kvp.Value
+    let key (kvp: KeyValuePair<_,_>) = kvp.Key
