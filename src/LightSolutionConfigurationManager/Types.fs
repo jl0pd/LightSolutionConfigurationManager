@@ -89,6 +89,13 @@ module Project =
               |> Seq.map (fun (KeyValue (k, v)) -> (k, ProjectConfiguration.fromMSBuild v))
               |> Map.ofSeq }
 
+    let isFolder project =
+        project.ProjectTypeGuid.Value = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}"
+
+type Project with
+    member p.IsFolder =
+        Project.isFolder p
+
 
 type Solution =
     { FormatVersion: int
@@ -185,14 +192,15 @@ module Solution =
         writeLine "\t\tHideSolutionNode = FALSE"
         writeLine "\tEndGlobalSection"
 
-    let private saveNestedProjects writeLine projectsByGuid projects =
-        writeLine "\tGlobalSection(NestedProjects) = preSolution"
+    let private saveNestedProjects writeLine projectsByGuid (projects: GuidString list) =
+        if not projects.IsEmpty then
+            writeLine "\tGlobalSection(NestedProjects) = preSolution"
 
-        for guid in projects do
-            let proj = Map.find guid projectsByGuid
-            writeLine $"\t\t%s{proj.ProjectGuid.Value} = %s{proj.ParentProjectGuid.Value}"
+            for guid in projects do
+                let proj = Map.find guid projectsByGuid
+                writeLine $"\t\t%s{proj.ProjectGuid.Value} = %s{proj.ParentProjectGuid.Value}"
 
-        writeLine "\tEndGlobalSection"
+            writeLine "\tEndGlobalSection"
 
     let private saveExtensibility writeLine sln =
         writeLine "\tGlobalSection(ExtensibilityGlobals) = postSolution"

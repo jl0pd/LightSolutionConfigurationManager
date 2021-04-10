@@ -33,6 +33,7 @@ type Msg =
     | SelectFile
     | FileSelected of string
     | ConfigurationSelected of SolutionConfiguration
+    | ChangeIncludeInBuild of int * bool
     | FileNotSelected
     | SaveFile
     | FileSaved
@@ -67,6 +68,30 @@ let saveFileAsync sln =
         return FileSaved
     } |> Cmd.OfTask.result
 
+let patchProject map index (projects: Project list) =
+    let rec inner i acc = function
+        | [] -> acc
+        | x :: xs when Project.isFolder x -> inner i (x :: acc) xs
+        | x :: xs when i = 0 -> inner (i - 1) ((map x) :: acc) xs
+        | x :: xs -> inner (i - 1) (x :: acc) xs
+    inner index [] projects |> List.rev
+
+let changeIncludeInBuild index isIncluded (selectedCfg: SolutionConfiguration) projects =
+    patchProject
+        (fun p ->
+            let newCfgs =
+                p.Configurations
+                |> Seq.map
+                    (fun (KeyValue (k, c)) ->
+                        if k = selectedCfg.FullName
+                        then (k, { c with IncludeInBuild = isIncluded })
+                        else (k, c))
+                |> Map.ofSeq
+            { p with Configurations = newCfgs }
+        )
+        index
+        projects
+
 let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
     match msg with
     | SelectFile ->
@@ -84,13 +109,17 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
         | SolutionNotSelected -> state, Cmd.none
         | SolutionIsLoaded sln -> SolutionIsLoaded { sln with SelectedConfiguration = c }, Cmd.none
 
+    | ChangeIncludeInBuild (index, isIncluded) ->
+        match state with
+        | SolutionNotSelected -> state, Cmd.none
+        | SolutionIsLoaded sln ->
+            let patched = changeIncludeInBuild index isIncluded sln.SelectedConfiguration sln.Solution.ProjectsInOrder
+            SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
+
     | FileNotSelected
     | FileSaved -> state, Cmd.none
 
-let isFolder project =
-    project.ProjectTypeGuid.Value = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}"
-
-let projectView (project: Project) (selectedCfg: SolutionConfiguration) index dispatch =
+let projectView (project: Project) (selectedCfg: SolutionConfiguration) (index: int) (dispatch: Msg -> unit) =
     let allBuild =
         let i, ni = project.Configurations
                     |> Seq.partition (fun (KeyValue (_, c)) -> c.IncludeInBuild)
@@ -133,12 +162,16 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) index di
                         CheckBox.margin 5.
                         CheckBox.content "build in all configurations"
                         CheckBox.isChecked allBuild
+                        CheckBox.onUnchecked ((fun e -> ()), SubPatchOptions.OnChangeOf index)
+                        CheckBox.onChecked  ((fun e -> ()), SubPatchOptions.OnChangeOf index)
                     ]
 
                     CheckBox.create [
                         CheckBox.margin 5.
                         CheckBox.content "build"
                         CheckBox.isChecked projCfg.IncludeInBuild
+                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, false))), SubPatchOptions.OnChangeOf index)
+                        CheckBox.onChecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, true))), SubPatchOptions.OnChangeOf index)
                     ]
                 ]
             ]
@@ -197,13 +230,15 @@ let loadedView (state: LoadedSolution) dispatch =
 
             ListBox.dataItems
                 (state.Solution.ProjectsInOrder
-                |> List.where (not << isFolder)
-                |> List.indexed
-                |> List.map (fun p -> (p, state.SelectedConfiguration)))
+                |> List.vChoosei (fun i p ->
+                    if p.IsFolder then
+                        ValueNone
+                    else
+                        ValueSome (i, p, state.SelectedConfiguration)))
 
             ListBox.itemTemplate
-                (DataTemplateView<((int * Project) * SolutionConfiguration)>.create
-                    (fun ((i, p), c) -> projectView p c i dispatch))
+                (DataTemplateView<(int * Project * SolutionConfiguration)>.create
+                    (fun (i, p, c) -> projectView p c i dispatch))
         ]
 
     DockPanel.create [
