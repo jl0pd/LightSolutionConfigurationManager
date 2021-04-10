@@ -50,7 +50,7 @@ TODO
 Build
 -----
 
-Everything that's required is just net5 sdk!
+Everything that's required is just NET5 sdk!
 Open `src` folder and type
 
 ```bash

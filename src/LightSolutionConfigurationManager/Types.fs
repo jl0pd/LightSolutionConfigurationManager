@@ -226,7 +226,7 @@ module Solution =
         saveGlobal writeLine sln
 
     let saveToStringBuilder sln =
-        let sb = System.Text.StringBuilder()
+        let sb = Text.StringBuilder()
         saveTo (sb.AppendLine >> ignore) sln
         sb
 
