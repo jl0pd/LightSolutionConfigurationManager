@@ -50,7 +50,7 @@ module ProjectConfiguration =
         { IncludeInBuild = cfg.IncludeInBuild
           Configuration =
               { Configuration = cfg.ConfigurationName
-                Platform = cfg.PlatformName } }
+                Platform = cfg.PlatformName.Replace("AnyCPU", "Any CPU") } }
 
     let configuration cfg =
         cfg.Configuration
@@ -193,12 +193,12 @@ module Solution =
         writeLine "\t\tHideSolutionNode = FALSE"
         writeLine "\tEndGlobalSection"
 
-    let private saveNestedProjects writeLine projectsByGuid (projects: GuidString list) =
+    let private saveNestedProjects writeLine (projectsByGuid: Map<GuidString, Project>) (projects: GuidString list) =
         if not projects.IsEmpty then
             writeLine "\tGlobalSection(NestedProjects) = preSolution"
 
             for guid in projects do
-                let proj = Map.find guid projectsByGuid
+                let proj = projectsByGuid.[guid]
                 writeLine $"\t\t%s{proj.ProjectGuid.Value} = %s{proj.ParentProjectGuid.Value}"
 
             writeLine "\tEndGlobalSection"

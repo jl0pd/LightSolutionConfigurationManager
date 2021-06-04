@@ -169,6 +169,8 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutio
         else
             Nullable true
 
+    let projCfg = project.Configurations.[selectedCfg.FullName]
+
     DockPanel.create [
         DockPanel.children [
             TextBlock.create [
@@ -181,19 +183,17 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutio
                 Grid.columnDefinitions "auto,100"
                 Grid.rowDefinitions "*,*"
 
-                let projCfg = project.Configurations.[selectedCfg.FullName]
-
                 Grid.children [
                     StackPanel.create [
                         StackPanel.columnSpan 2
                         StackPanel.children [
                             ComboBox.create [
                                 ComboBox.minWidth 200.
-                                ComboBox.dataItems solutionCfgs
-                                ComboBox.selectedItem projCfg.Configuration
                                 ComboBox.itemTemplate
                                     (DataTemplateView<SolutionConfiguration>.create
                                         (fun c -> TextBlock.create [ TextBlock.text c.FullName ]))
+                                ComboBox.dataItems solutionCfgs
+                                ComboBox.selectedItem projCfg.Configuration
                                 ComboBox.onSelectedItemChanged
                                     ((function
                                       | :? SolutionConfiguration as c ->
