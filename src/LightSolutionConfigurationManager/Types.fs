@@ -3,17 +3,7 @@ namespace LightSolutionConfigurationManager
 open System
 open System.Diagnostics
 open Microsoft.FSharp.Core.Printf
-open SolutionParser.Construction
 
-[<Struct>]
-type GuidString = GuidString of string
-
-[<RequireQualifiedAccess>]
-module GuidString =
-    let value (GuidString s) = s
-
-type GuidString with
-    member g.Value = GuidString.value g
 
 [<DebuggerDisplay("{FullName}")>]
 type SolutionConfiguration =
@@ -28,15 +18,11 @@ module SolutionConfiguration =
         else
             sprintf "%s|%s" c p
 
-    let fromMSBuild (cfg: SolutionConfigurationInSolution) =
-        { Configuration = cfg.ConfigurationName
-          Platform = cfg.PlatformName.Replace("AnyCPU", "Any CPU") }
-
 type SolutionConfiguration with
     member c.FullName = SolutionConfiguration.fullName c
 
 
-[<DebuggerDisplay("{Configuration}: build {IncludeInBuild}")>]
+[<DebuggerDisplay("{GetDebuggerDisplay(),nq}")>]
 type ProjectConfiguration =
     { Configuration: SolutionConfiguration
       IncludeInBuild: bool }
@@ -46,51 +32,33 @@ module ProjectConfiguration =
     let fullName c =
         SolutionConfiguration.fullName c.Configuration
 
-    let fromMSBuild (cfg: ProjectConfigurationInSolution) =
-        { IncludeInBuild = cfg.IncludeInBuild
-          Configuration =
-              { Configuration = cfg.ConfigurationName
-                Platform = cfg.PlatformName.Replace("AnyCPU", "Any CPU") } }
-
     let configuration cfg =
         cfg.Configuration
 
 type ProjectConfiguration with
     member c.FullName = ProjectConfiguration.fullName c
+    member private c.GetDebuggerDisplay () =
+        let build = if c.IncludeInBuild then "+" else "-"
+        $"%s{c.Configuration.FullName}: build %s{build}"
 
 
 type Project =
-    { ProjectGuid: GuidString
-      ProjectTypeGuid: GuidString
-      ParentProjectGuid: GuidString
+    { Id: Guid
+      TypeId: Guid
+      ParentId: Guid option
       Name: string
-      RelativePath: string
+      Path: Uri
       FolderFiles: string list
-      Dependencies: GuidString list
-      Configurations: Map<string, ProjectConfiguration> }
+      Dependencies: Guid list
+      Configurations: Map<SolutionConfiguration, ProjectConfiguration> }
 
 [<RequireQualifiedAccess>]
 module Project =
-    let fromMSBuild (proj: ProjectInSolution) =
-        { ProjectGuid = GuidString proj.ProjectGuid
-          ProjectTypeGuid = GuidString proj.ProjectTypeGuid
-          ParentProjectGuid = GuidString proj.ParentProjectGuid
-          Name = proj.ProjectName
-          RelativePath = proj.RelativePath
-          FolderFiles = List.ofSeq proj.FolderFiles
 
-          Dependencies =
-              proj.Dependencies
-              |> Seq.map GuidString
-              |> Seq.toList
-
-          Configurations =
-              proj.ProjectConfigurations
-              |> Seq.map (fun (KeyValue (k, v)) -> (k, ProjectConfiguration.fromMSBuild v))
-              |> Map.ofSeq }
+    let folderGuid = Guid "{2150E333-8FDC-42A3-9474-1A3956D46DE8}"
 
     let isFolder project =
-        project.ProjectTypeGuid.Value = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}"
+        project.TypeId = folderGuid
 
 type Project with
     member p.IsFolder =
@@ -98,43 +66,23 @@ type Project with
 
 
 type Solution =
-    { FormatVersion: int
+    { FormatVersion: Version
       VisualStudioVersion: Version
       MinimumVisualStudioVersion: Version
       Configurations: SolutionConfiguration list
       ProjectsInOrder: Project list
-      NestedProjectsInOrder: GuidString list
-      SolutionGuid: GuidString }
+      NestedProjectsInOrder: Guid list
+      Properties: Map<string, string>
+      Id: Guid }
 
 [<RequireQualifiedAccess>]
 module Solution =
     let projectsByGuid sln =
         sln.ProjectsInOrder
-        |> List.fold (fun state p -> Map.add p.ProjectGuid p state) Map.empty
-
-    let fromMSBuild (sln: SolutionFile) : Solution =
-        { SolutionGuid = GuidString sln.SolutionGuid
-          FormatVersion = sln.Version
-          VisualStudioVersion = sln.VisualStudioVersionExact
-          MinimumVisualStudioVersion = sln.MinimumVisualStudioVersionExact
-
-          Configurations =
-              sln.SolutionConfigurations
-              |> Seq.map SolutionConfiguration.fromMSBuild
-              |> Seq.toList
-
-          ProjectsInOrder =
-              sln.ProjectsInOrder
-              |> Seq.map Project.fromMSBuild
-              |> Seq.toList
-
-          NestedProjectsInOrder =
-              sln.NestedProjectsInOrder
-              |> Seq.map GuidString
-              |> Seq.toList }
+        |> List.fold (fun state p -> Map.add p.Id p state) Map.empty
 
     let private saveHeader writeLine sln =
-        let v = $"Microsoft Visual Studio Solution File, Format Version %d{sln.FormatVersion}.00"
+        let v = $"Microsoft Visual Studio Solution File, Format Version %s{sln.FormatVersion.ToString 1}.00"
         let vsVm = $"# Visual Studio Version %d{sln.VisualStudioVersion.Major}"
         let vsV = $"VisualStudioVersion = %O{sln.VisualStudioVersion}"
         let mV = $"MinimumVisualStudioVersion = %O{sln.MinimumVisualStudioVersion}"
@@ -144,7 +92,7 @@ module Solution =
         writeLine mV
 
     let private saveProject writeLine project =
-        writeLine $"Project(\"%s{project.ProjectTypeGuid.Value}\") = \"%s{project.Name}\", \"%s{project.RelativePath}\", \"%s{project.ProjectGuid.Value}\""
+        writeLine $"Project(\"{project.TypeId:B}\") = \"%s{project.Name}\", \"%O{project.Path}\", \"{project.Id:B}\""
 
         if not project.FolderFiles.IsEmpty then
             writeLine "\tProjectSection(SolutionItems) = preProject"
@@ -155,7 +103,7 @@ module Solution =
         if not project.Dependencies.IsEmpty then
             writeLine "\tProjectSection(ProjectDependencies) = postProject"
             for dep in project.Dependencies do
-                writeLine $"\t\t%s{dep.Value} = %s{dep.Value}"
+                writeLine $"\t\t{dep:B} = {dep:B}"
             writeLine "\tEndProjectSection"
 
         writeLine "EndProject"
@@ -177,13 +125,13 @@ module Solution =
 
         for proj in projects do
             for slnCfg in slnConfigurations do
-                let sc = slnCfg.FullName
-                match proj.Configurations.TryGetValue sc with
+                match proj.Configurations.TryGetValue slnCfg with
                 | (true, cfg) ->
+                    let sc = slnCfg.FullName
                     let cfgName = cfg.FullName.Replace("AnyCPU", "Any CPU")
-                    writeLine $"\t\t%s{proj.ProjectGuid.Value}.%s{sc}.ActiveCfg = %s{cfgName}"
+                    writeLine $"\t\t{proj.Id:B}.%s{sc}.ActiveCfg = %s{cfgName}"
                     if cfg.IncludeInBuild then
-                        writeLine $"\t\t%s{proj.ProjectGuid.Value}.%s{sc}.Build.0 = %s{cfgName}"
+                        writeLine $"\t\t{proj.Id:B}.%s{sc}.Build.0 = %s{cfgName}"
                 | (false, _)  -> ()
 
         writeLine "\tEndGlobalSection"
@@ -193,19 +141,21 @@ module Solution =
         writeLine "\t\tHideSolutionNode = FALSE"
         writeLine "\tEndGlobalSection"
 
-    let private saveNestedProjects writeLine (projectsByGuid: Map<GuidString, Project>) (projects: GuidString list) =
+    let private saveNestedProjects writeLine (projectsByGuid: Map<Guid, Project>) (projects: Guid list) =
         if not projects.IsEmpty then
             writeLine "\tGlobalSection(NestedProjects) = preSolution"
 
             for guid in projects do
                 let proj = projectsByGuid.[guid]
-                writeLine $"\t\t%s{proj.ProjectGuid.Value} = %s{proj.ParentProjectGuid.Value}"
+                match proj.ParentId with
+                | Some g -> writeLine $"\t\t{proj.Id:B} ={g:B}"
+                | None -> ()
 
             writeLine "\tEndGlobalSection"
 
     let private saveExtensibility writeLine sln =
         writeLine "\tGlobalSection(ExtensibilityGlobals) = postSolution"
-        writeLine $"\t\tSolutionGuid = %s{sln.SolutionGuid.Value}"
+        writeLine $"\t\tSolutionGuid = {sln.Id:B}"
         writeLine "\tEndGlobalSection"
 
     let private saveGlobal writeLine sln =

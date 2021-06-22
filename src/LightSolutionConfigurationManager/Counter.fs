@@ -11,18 +11,15 @@ open Avalonia.FuncUI.DSL
 open Avalonia.FuncUI.Types
 open FSharp.Control.Tasks
 open Elmish
-open SolutionParser.Construction
 
 
 type LoadedSolution =
     { Solution : Solution
-      SolutionFile : SolutionFile
       SelectedConfiguration : SolutionConfiguration }
     with
-        static member Create file =
-            let sln = Solution.fromMSBuild file
-            { SolutionFile = file
-              Solution = sln
+        static member FromFile path =
+            let sln = SolutionParser.parseFile path
+            { Solution = sln
               SelectedConfiguration = List.head sln.Configurations }
 
 type State =
@@ -100,7 +97,7 @@ let changeIncludeInBuild' index isIncluded shouldChange projects =
         projects
 
 let changeIncludeInBuild index isIncluded (solutionCfg: SolutionConfiguration) projects =
-    changeIncludeInBuild' index isIncluded (fun s -> s = solutionCfg.FullName) projects
+    changeIncludeInBuild' index isIncluded ((=) solutionCfg) projects
 
 let changeAllIncludeInBuild index isIncluded projects =
     changeIncludeInBuild' index isIncluded (fun _ -> true) projects
@@ -108,7 +105,7 @@ let changeAllIncludeInBuild index isIncluded projects =
 let changeProjectBuildConfiguration index (solutionCfg: SolutionConfiguration) (newCfg: SolutionConfiguration) projects =
     patchProjectConfigurations
         (fun (KeyValue (k, v)) ->
-            if k = solutionCfg.FullName then
+            if k = solutionCfg then
                 (k, { v with Configuration = newCfg })
             else (k, v))
         index
@@ -124,7 +121,7 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
         | SolutionNotSelected -> state, Cmd.none
 
     | FileSelected p ->
-        SolutionIsLoaded (SolutionFile.Parse p |> LoadedSolution.Create), Cmd.none
+        SolutionIsLoaded (LoadedSolution.FromFile p), Cmd.none
 
     | ConfigurationSelected c ->
         match state with
@@ -169,7 +166,7 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutio
         else
             Nullable true
 
-    let projCfg = project.Configurations.[selectedCfg.FullName]
+    let projCfg = project.Configurations.[selectedCfg]
 
     DockPanel.create [
         DockPanel.children [

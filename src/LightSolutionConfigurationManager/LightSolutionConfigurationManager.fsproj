@@ -3,24 +3,23 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
- <PropertyGroup Condition="'$(Configuration)' == 'release'">
+  <PropertyGroup Condition="'$(Configuration)' == 'release'">
     <OutputType>WinExe</OutputType>
- </PropertyGroup>
+  </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Extensions.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="SolutionParser.fs" />
     <Compile Include="Counter.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SolutionParser\SolutionParser.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
+    <PackageReference Include="FParsec" Version="1.1.1" />
+    <PackageReference Include="Microsoft.SourceLink.Github" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.10.4" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.4" />
     <PackageReference Include="JaggerJo.Avalonia.FuncUI" Version="0.5.0-beta" />
     <PackageReference Include="JaggerJo.Avalonia.FuncUI.DSL" Version="0.5.0-beta" />
     <PackageReference Include="JaggerJo.Avalonia.FuncUI.Elmish" Version="0.5.0-beta" />

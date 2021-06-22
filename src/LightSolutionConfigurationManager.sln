@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LightSolutionConfigurationManager", "LightSolutionConfigurationManager\LightSolutionConfigurationManager.fsproj", "{E65DC514-ED98-42BA-BB0F-B2B4FB7E3CFC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SolutionParser", "SolutionParser\SolutionParser.csproj", "{5920B590-0612-4022-8DF6-52A6D5C80DF0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,18 +27,6 @@ Global
 		{E65DC514-ED98-42BA-BB0F-B2B4FB7E3CFC}.Release|x64.Build.0 = Release|Any CPU
 		{E65DC514-ED98-42BA-BB0F-B2B4FB7E3CFC}.Release|x86.ActiveCfg = Release|Any CPU
 		{E65DC514-ED98-42BA-BB0F-B2B4FB7E3CFC}.Release|x86.Build.0 = Release|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Debug|x64.Build.0 = Debug|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Debug|x86.Build.0 = Debug|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Release|x64.ActiveCfg = Release|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Release|x64.Build.0 = Release|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Release|x86.ActiveCfg = Release|Any CPU
-		{5920B590-0612-4022-8DF6-52A6D5C80DF0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
