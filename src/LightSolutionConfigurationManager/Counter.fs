@@ -63,7 +63,8 @@ let saveFileAsync sln =
     task {
         let dlg = SaveFileDialog(DefaultExtension = "sln")
         let! path = dlg.ShowAsync (getMainWindow())
-        Solution.saveToFile path sln
+        if not <| String.IsNullOrWhiteSpace path then
+            Solution.saveToFile path sln
         return FileSaved
     } |> Cmd.OfTask.result
 
