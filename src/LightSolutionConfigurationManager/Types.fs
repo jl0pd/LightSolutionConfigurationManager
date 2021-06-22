@@ -81,6 +81,9 @@ module Solution =
         sln.ProjectsInOrder
         |> List.fold (fun state p -> Map.add p.Id p state) Map.empty
 
+    let private guidToString (g: Guid) =
+        g.ToString("B").ToUpper()
+
     let private saveHeader writeLine sln =
         let v = $"Microsoft Visual Studio Solution File, Format Version %s{sln.FormatVersion.ToString 1}.00"
         let vsVm = $"# Visual Studio Version %d{sln.VisualStudioVersion.Major}"
@@ -92,7 +95,7 @@ module Solution =
         writeLine mV
 
     let private saveProject writeLine project =
-        writeLine $"Project(\"{project.TypeId:B}\") = \"%s{project.Name}\", \"%O{project.Path}\", \"{project.Id:B}\""
+        writeLine $"Project(\"%s{guidToString project.TypeId}\") = \"%s{project.Name}\", \"%O{project.Path}\", \"%s{guidToString project.Id}\""
 
         if not project.FolderFiles.IsEmpty then
             writeLine "\tProjectSection(SolutionItems) = preProject"
@@ -103,7 +106,7 @@ module Solution =
         if not project.Dependencies.IsEmpty then
             writeLine "\tProjectSection(ProjectDependencies) = postProject"
             for dep in project.Dependencies do
-                writeLine $"\t\t{dep:B} = {dep:B}"
+                writeLine $"\t\t%s{guidToString dep} = %s{guidToString dep}"
             writeLine "\tEndProjectSection"
 
         writeLine "EndProject"
@@ -128,11 +131,10 @@ module Solution =
                 match proj.Configurations.TryGetValue slnCfg with
                 | (true, cfg) ->
                     let sc = slnCfg.FullName
-                    let cfgName = cfg.FullName.Replace("AnyCPU", "Any CPU")
-                    writeLine $"\t\t{proj.Id:B}.%s{sc}.ActiveCfg = %s{cfgName}"
+                    writeLine $"\t\t%s{guidToString proj.Id}.%s{sc}.ActiveCfg = %s{cfg.FullName}"
                     if cfg.IncludeInBuild then
-                        writeLine $"\t\t{proj.Id:B}.%s{sc}.Build.0 = %s{cfgName}"
-                | (false, _)  -> ()
+                        writeLine $"\t\t%s{guidToString proj.Id}.%s{sc}.Build.0 = %s{cfg.FullName}"
+                | (false, _) -> ()
 
         writeLine "\tEndGlobalSection"
 
@@ -148,14 +150,14 @@ module Solution =
             for guid in projects do
                 let proj = projectsByGuid.[guid]
                 match proj.ParentId with
-                | Some g -> writeLine $"\t\t{proj.Id:B} ={g:B}"
+                | Some g -> writeLine $"\t\t%s{guidToString proj.Id} = %s{guidToString g}"
                 | None -> ()
 
             writeLine "\tEndGlobalSection"
 
     let private saveExtensibility writeLine sln =
         writeLine "\tGlobalSection(ExtensibilityGlobals) = postSolution"
-        writeLine $"\t\tSolutionGuid = {sln.Id:B}"
+        writeLine $"\t\tSolutionGuid = %s{guidToString sln.Id}"
         writeLine "\tEndGlobalSection"
 
     let private saveGlobal writeLine sln =

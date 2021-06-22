@@ -10,7 +10,6 @@ let private manyNSatisfy n p =
     manyMinMaxSatisfy n n p
 
 #nowarn "9"
-open System
 
 let private pGuid =
     // {6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}
@@ -263,7 +262,7 @@ let parseFile (path: string) : Solution =
                                |> Map.toArray
                                |> Array.choose (fun ((id, slnCfg), projCfg) ->
                                     if id = p.Id then
-                                        Some (slnCfg, { Configuration = projCfg.Configuration
+                                        Some (slnCfg, { Configuration = projCfg.BuildConfiguration
                                                         IncludeInBuild = projCfg.Build })
                                     else None)
                                |> Map.ofArray
