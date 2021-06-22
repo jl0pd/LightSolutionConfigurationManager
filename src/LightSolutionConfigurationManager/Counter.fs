@@ -12,15 +12,21 @@ open Avalonia.FuncUI.Types
 open FSharp.Control.Tasks
 open Elmish
 
+type SearchOptions =
+    { Pattern : string
+      IsRegex : bool
+      IsCaseSensitive : bool }
 
 type LoadedSolution =
     { Solution : Solution
-      SelectedConfiguration : SolutionConfiguration }
+      SelectedConfiguration : SolutionConfiguration
+      SearchOptions : SearchOptions }
     with
         static member FromFile path =
             let sln = SolutionParser.parseFile path
             { Solution = sln
-              SelectedConfiguration = List.head sln.Configurations }
+              SelectedConfiguration = List.head sln.Configurations
+              SearchOptions = { Pattern = ""; IsRegex = false; IsCaseSensitive = false } }
 
 type State =
     | SolutionNotSelected
@@ -29,6 +35,9 @@ type State =
 type Msg =
     | SelectFile
     | FileSelected of string
+    | RegexToggled of bool
+    | CaseSensitiveToggled of bool
+    | SearchTextChanged of string
     | ConfigurationSelected of SolutionConfiguration
     | ProjectConfigurationSelected of int * SolutionConfiguration
     | ChangeIncludeInBuild of int * bool
@@ -150,6 +159,24 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
             let patched = changeProjectBuildConfiguration index sln.SelectedConfiguration cfg sln.Solution.ProjectsInOrder
             SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
 
+    | SearchTextChanged s ->
+        match state with
+        | SolutionNotSelected -> state, Cmd.none
+        | SolutionIsLoaded sln ->
+            SolutionIsLoaded { sln with SearchOptions = { sln.SearchOptions with Pattern = s } }, Cmd.none
+
+    | RegexToggled r ->
+        match state with
+        | SolutionNotSelected -> state, Cmd.none
+        | SolutionIsLoaded sln ->
+            SolutionIsLoaded { sln with SearchOptions = { sln.SearchOptions with IsRegex = r } }, Cmd.none
+
+    | CaseSensitiveToggled c ->
+        match state with
+        | SolutionNotSelected -> state, Cmd.none
+        | SolutionIsLoaded sln ->
+            SolutionIsLoaded { sln with SearchOptions = { sln.SearchOptions with IsCaseSensitive = c } }, Cmd.none
+
     | FileNotSelected
     | FileSaved -> state, Cmd.none
 
@@ -266,6 +293,32 @@ let loadedView (state: LoadedSolution) dispatch =
                         | :? SolutionConfiguration as c -> dispatch <| ConfigurationSelected c
                         | _ -> ())
                 ]
+
+                TextBox.create [
+                    TextBox.text state.SearchOptions.Pattern
+                    TextBox.minWidth 100.
+                    TextBox.onTextChanged (dispatch << SearchTextChanged)
+                ]
+
+                ToggleButton.create [
+                    ToggleButton.isChecked state.SearchOptions.IsRegex
+                    ToggleButton.content "*."
+                    ToggleButton.padding 0.
+                    ToggleButton.width 30.
+                    ToggleButton.height 30.
+                    ToggleButton.onChecked (fun _ -> dispatch (RegexToggled true))
+                    ToggleButton.onUnchecked (fun _ -> dispatch (RegexToggled false))
+                ]
+
+                ToggleButton.create [
+                    ToggleButton.isChecked state.SearchOptions.IsCaseSensitive
+                    ToggleButton.content "Aa"
+                    ToggleButton.padding 0.
+                    ToggleButton.width 30.
+                    ToggleButton.height 30.
+                    ToggleButton.onChecked (fun _ -> dispatch (CaseSensitiveToggled true))
+                    ToggleButton.onUnchecked (fun _ -> dispatch (CaseSensitiveToggled false))
+                ]
             ]
         ]
 
@@ -279,7 +332,19 @@ let loadedView (state: LoadedSolution) dispatch =
                     if p.IsFolder then
                         ValueNone
                     else
-                        ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)))
+                        match state.SearchOptions with // TODO: https://stackoverflow.com/questions/68081961/patten-matching-with-or-and-when-clauses
+                        | { Pattern = pattern } when String.IsNullOrEmpty pattern ->
+                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
+                        | { Pattern = pattern; IsRegex = true; IsCaseSensitive = true } when Regex.isMatch p.Name pattern ->
+                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
+                        | { Pattern = pattern; IsRegex = true; IsCaseSensitive = false } when Regex.isMatchCaseInsensitive p.Name pattern ->
+                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
+                        | { Pattern = pattern; IsRegex = false; IsCaseSensitive = true } when p.Name.Contains(pattern, StringComparison.InvariantCulture) ->
+                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
+                        | { Pattern = pattern; IsRegex = false; IsCaseSensitive = false } when p.Name.Contains(pattern, StringComparison.InvariantCultureIgnoreCase) ->
+                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
+                        | _ -> ValueNone
+                ))
 
             ListBox.itemTemplate
                 (DataTemplateView<(int * Project * SolutionConfiguration * SolutionConfiguration list)>.create
