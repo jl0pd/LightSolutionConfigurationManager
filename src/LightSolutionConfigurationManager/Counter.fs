@@ -332,18 +332,17 @@ let loadedView (state: LoadedSolution) dispatch =
                     if p.IsFolder then
                         ValueNone
                     else
-                        match state.SearchOptions with // TODO: https://stackoverflow.com/questions/68081961/patten-matching-with-or-and-when-clauses
-                        | { Pattern = pattern } when String.IsNullOrEmpty pattern ->
+                        let { Pattern = pattern
+                              IsRegex = isRegex
+                              IsCaseSensitive = isCaseSensitive } = state.SearchOptions
+                        if (String.IsNullOrEmpty pattern
+                        ||     isRegex &&     isCaseSensitive && Regex.isMatch p.Name pattern
+                        ||     isRegex && not isCaseSensitive && Regex.isMatchCaseInsensitive p.Name pattern
+                        || not isRegex &&     isCaseSensitive && p.Name.Contains(pattern, StringComparison.InvariantCulture)
+                        || not isRegex && not isCaseSensitive && p.Name.Contains(pattern, StringComparison.InvariantCultureIgnoreCase)) then
                             ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
-                        | { Pattern = pattern; IsRegex = true; IsCaseSensitive = true } when Regex.isMatch p.Name pattern ->
-                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
-                        | { Pattern = pattern; IsRegex = true; IsCaseSensitive = false } when Regex.isMatchCaseInsensitive p.Name pattern ->
-                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
-                        | { Pattern = pattern; IsRegex = false; IsCaseSensitive = true } when p.Name.Contains(pattern, StringComparison.InvariantCulture) ->
-                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
-                        | { Pattern = pattern; IsRegex = false; IsCaseSensitive = false } when p.Name.Contains(pattern, StringComparison.InvariantCultureIgnoreCase) ->
-                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
-                        | _ -> ValueNone
+                        else
+                            ValueNone
                 ))
 
             ListBox.itemTemplate
