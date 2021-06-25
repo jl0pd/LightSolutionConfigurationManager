@@ -3,6 +3,7 @@ namespace LightSolutionManager
 open System
 open System.Diagnostics
 open Microsoft.FSharp.Core.Printf
+open LightSolutionManager.Collections
 
 
 [<DebuggerDisplay("{FullName}")>]
@@ -70,16 +71,18 @@ type Solution =
       VisualStudioVersion: Version
       MinimumVisualStudioVersion: Version
       Configurations: SolutionConfiguration list
-      ProjectsInOrder: Project list
+      ProjectsInOrder: OrderedMap<Guid, Project>
       NestedProjectsInOrder: Guid list
       Properties: Map<string, string>
       Id: Guid }
 
 [<RequireQualifiedAccess>]
 module Solution =
-    let projectsByGuid sln =
-        sln.ProjectsInOrder
-        |> List.fold (fun state p -> Map.add p.Id p state) Map.empty
+
+    let patchProject patcher id sln =
+        match sln.ProjectsInOrder.TryFind id with
+        | Some p -> { sln with ProjectsInOrder = OrderedMap.addOrUpdate id (patcher p) sln.ProjectsInOrder }
+        | None -> sln
 
     let private guidToString (g: Guid) =
         g.ToString("B").ToUpper()
@@ -111,7 +114,7 @@ module Solution =
 
         writeLine "EndProject"
 
-    let private saveProjects writeLine projects =
+    let private saveProjects writeLine (projects: Project seq) =
         for project in projects do
             saveProject writeLine project
 
@@ -143,7 +146,7 @@ module Solution =
         writeLine "\t\tHideSolutionNode = FALSE"
         writeLine "\tEndGlobalSection"
 
-    let private saveNestedProjects writeLine (projectsByGuid: Map<Guid, Project>) (projects: Guid list) =
+    let private saveNestedProjects writeLine (projectsByGuid: OrderedMap<Guid, Project>) (projects: Guid list) =
         if not projects.IsEmpty then
             writeLine "\tGlobalSection(NestedProjects) = preSolution"
 
@@ -164,9 +167,9 @@ module Solution =
         writeLine "Global"
 
         saveSolutionConfigurations writeLine sln.Configurations
-        saveProjectConfigurations writeLine sln.Configurations sln.ProjectsInOrder
+        saveProjectConfigurations writeLine sln.Configurations sln.ProjectsInOrder.Values
         saveSolutionProperties writeLine
-        saveNestedProjects writeLine (projectsByGuid sln) sln.NestedProjectsInOrder
+        saveNestedProjects writeLine (sln.ProjectsInOrder) sln.NestedProjectsInOrder
         saveExtensibility writeLine sln
 
         writeLine "EndGlobal"
@@ -174,7 +177,7 @@ module Solution =
     let saveTo writeLine sln =
         writeLine ""
         saveHeader writeLine sln
-        saveProjects writeLine sln.ProjectsInOrder
+        saveProjects writeLine sln.ProjectsInOrder.Values
         saveGlobal writeLine sln
 
     let saveToStringBuilder sln =

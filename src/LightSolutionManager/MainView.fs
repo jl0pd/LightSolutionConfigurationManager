@@ -39,9 +39,9 @@ type Msg =
     | CaseSensitiveToggled of bool
     | SearchTextChanged of string
     | ConfigurationSelected of SolutionConfiguration
-    | ProjectConfigurationSelected of int * SolutionConfiguration
-    | ChangeIncludeInBuild of int * bool
-    | ChangeAllIncludeInBuild of int * bool
+    | ProjectConfigurationSelected of Guid * SolutionConfiguration
+    | ChangeIncludeInBuild of Guid * bool
+    | ChangeAllIncludeInBuild of Guid * bool
     | FileNotSelected
     | SaveFile
     | FileSaved
@@ -77,50 +77,6 @@ let saveFileAsync sln =
         return FileSaved
     } |> Cmd.OfTask.result
 
-let patchProject map index (projects: Project list) =
-    let rec inner i acc = function
-        | [] -> acc
-        | x :: xs when Project.isFolder x -> inner i (x :: acc) xs
-        | x :: xs when i = 0 -> inner (i - 1) ((map x) :: acc) xs
-        | x :: xs -> inner (i - 1) (x :: acc) xs
-    inner index [] projects |> List.rev
-
-let patchProjectConfigurations map index projects =
-    patchProject
-        (fun p ->
-            let newCfgs =
-                p.Configurations
-                |> Seq.map map
-                |> Map.ofSeq
-            { p with Configurations = newCfgs }
-        )
-        index
-        projects
-
-let changeIncludeInBuild' index isIncluded shouldChange projects =
-    patchProjectConfigurations
-        (fun (KeyValue (k, c)) ->
-            if shouldChange k
-            then (k, { c with IncludeInBuild = isIncluded })
-            else (k, c))
-        index
-        projects
-
-let changeIncludeInBuild index isIncluded (solutionCfg: SolutionConfiguration) projects =
-    changeIncludeInBuild' index isIncluded ((=) solutionCfg) projects
-
-let changeAllIncludeInBuild index isIncluded projects =
-    changeIncludeInBuild' index isIncluded (fun _ -> true) projects
-
-let changeProjectBuildConfiguration index (solutionCfg: SolutionConfiguration) (newCfg: SolutionConfiguration) projects =
-    patchProjectConfigurations
-        (fun (KeyValue (k, v)) ->
-            if k = solutionCfg then
-                (k, { v with Configuration = newCfg })
-            else (k, v))
-        index
-        projects
-
 let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
     match msg with
     | SelectFile ->
@@ -138,26 +94,53 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
         | SolutionNotSelected -> state, Cmd.none
         | SolutionIsLoaded sln -> SolutionIsLoaded { sln with SelectedConfiguration = c }, Cmd.none
 
-    | ChangeIncludeInBuild (index, isIncluded) ->
+    | ChangeIncludeInBuild (id, isIncluded) ->
         match state with
         | SolutionNotSelected -> state, Cmd.none
         | SolutionIsLoaded sln ->
-            let patched = changeIncludeInBuild index isIncluded sln.SelectedConfiguration sln.Solution.ProjectsInOrder
-            SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
+            SolutionIsLoaded { sln with
+                                    Solution = Solution.patchProject
+                                                (fun p -> { p with Configurations =
+                                                                    Map.change
+                                                                        sln.SelectedConfiguration
+                                                                        (function
+                                                                        | None -> None
+                                                                        | Some c -> Some { c with IncludeInBuild = isIncluded })
+                                                                        p.Configurations })
+                                                id
+                                                sln.Solution }
+            , Cmd.none
 
-    | ChangeAllIncludeInBuild (index, isIncluded) ->
+    | ChangeAllIncludeInBuild (id, isIncluded) ->
         match state with
         | SolutionNotSelected -> state, Cmd.none
         | SolutionIsLoaded sln ->
-            let patched = changeAllIncludeInBuild index isIncluded sln.Solution.ProjectsInOrder
-            SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
+            SolutionIsLoaded { sln with
+                                    Solution = Solution.patchProject
+                                                (fun p -> { p with Configurations =
+                                                                    Map.map
+                                                                        (fun _ value -> { value with IncludeInBuild = isIncluded })
+                                                                        p.Configurations })
+                                                id
+                                                sln.Solution }
+            , Cmd.none
 
-    | ProjectConfigurationSelected (index, cfg) ->
+    | ProjectConfigurationSelected (id, cfg) ->
         match state with
         | SolutionNotSelected -> state, Cmd.none
         | SolutionIsLoaded sln ->
-            let patched = changeProjectBuildConfiguration index sln.SelectedConfiguration cfg sln.Solution.ProjectsInOrder
-            SolutionIsLoaded { sln with Solution = { sln.Solution with ProjectsInOrder = patched } }, Cmd.none
+            SolutionIsLoaded { sln with
+                                    Solution = Solution.patchProject
+                                                (fun p -> { p with Configurations =
+                                                                    Map.change
+                                                                        sln.SelectedConfiguration
+                                                                        (function
+                                                                        | None -> None
+                                                                        | Some c -> Some { c with Configuration = cfg })
+                                                                        p.Configurations })
+                                                id
+                                                sln.Solution }
+            , Cmd.none
 
     | SearchTextChanged s ->
         match state with
@@ -180,7 +163,7 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
     | FileNotSelected
     | FileSaved -> state, Cmd.none
 
-let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutionCfgs: SolutionConfiguration list) (index: int) (dispatch: Msg -> unit) =
+let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutionCfgs: SolutionConfiguration list) (dispatch: Msg -> unit) =
     let allBuild =
         let i, ni = project.Configurations
                     |> Seq.partition (fun (KeyValue (_, c)) -> c.IncludeInBuild)
@@ -222,8 +205,8 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutio
                                 ComboBox.onSelectedItemChanged
                                     ((function
                                       | :? SolutionConfiguration as c ->
-                                            dispatch (ProjectConfigurationSelected (index, c))
-                                      | _ -> ()), OnChangeOf index)
+                                            dispatch (ProjectConfigurationSelected (project.Id, c))
+                                      | _ -> ()), OnChangeOf project.Id)
                             ]
                         ]
                     ]
@@ -233,8 +216,8 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutio
                         CheckBox.row 1
                         CheckBox.content "build in all configurations"
                         CheckBox.isChecked allBuild
-                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeAllIncludeInBuild (index, false))), OnChangeOf index)
-                        CheckBox.onChecked ((fun _ -> dispatch (ChangeAllIncludeInBuild (index, true))), OnChangeOf index)
+                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeAllIncludeInBuild (project.Id, false))), OnChangeOf project.Id)
+                        CheckBox.onChecked ((fun _ -> dispatch (ChangeAllIncludeInBuild (project.Id, true))), OnChangeOf project.Id)
                     ]
 
                     CheckBox.create [
@@ -243,8 +226,8 @@ let projectView (project: Project) (selectedCfg: SolutionConfiguration) (solutio
                         CheckBox.margin 5.
                         CheckBox.content "build"
                         CheckBox.isChecked projCfg.IncludeInBuild
-                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, false))), OnChangeOf index)
-                        CheckBox.onChecked ((fun _ -> dispatch (ChangeIncludeInBuild (index, true))), OnChangeOf index)
+                        CheckBox.onUnchecked ((fun _ -> dispatch (ChangeIncludeInBuild (project.Id, false))), OnChangeOf project.Id)
+                        CheckBox.onChecked ((fun _ -> dispatch (ChangeIncludeInBuild (project.Id, true))), OnChangeOf project.Id)
                     ]
                 ]
             ]
@@ -328,9 +311,9 @@ let loadedView (state: LoadedSolution) dispatch =
 
             ListBox.dataItems
                 (state.Solution.ProjectsInOrder
-                |> List.vChoosei (fun i p ->
+                |> Seq.choose (fun (KeyValue(_, p)) ->
                     if p.IsFolder then
-                        ValueNone
+                        None
                     else
                         let { Pattern = pattern
                               IsRegex = isRegex
@@ -340,14 +323,14 @@ let loadedView (state: LoadedSolution) dispatch =
                         ||     isRegex && not isCaseSensitive && Regex.isMatchCaseInsensitive p.Name pattern
                         || not isRegex &&     isCaseSensitive && p.Name.Contains(pattern, StringComparison.InvariantCulture)
                         || not isRegex && not isCaseSensitive && p.Name.Contains(pattern, StringComparison.InvariantCultureIgnoreCase)) then
-                            ValueSome (i, p, state.SelectedConfiguration, state.Solution.Configurations)
+                            Some (p, state.SelectedConfiguration, state.Solution.Configurations)
                         else
-                            ValueNone
-                ))
+                            None)
+                |> Seq.toArray)
 
             ListBox.itemTemplate
-                (DataTemplateView<(int * Project * SolutionConfiguration * SolutionConfiguration list)>.create
-                    (fun (i, p, c, cs) -> projectView p c cs i dispatch))
+                (DataTemplateView<(Project * SolutionConfiguration * SolutionConfiguration list)>.create
+                    (fun (p, c, cs) -> projectView p c cs dispatch))
         ]
 
     DockPanel.create [

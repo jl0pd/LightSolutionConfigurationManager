@@ -5,6 +5,7 @@ open System.Text
 open FSharp.NativeInterop
 open System.Globalization
 open FParsec
+open LightSolutionManager.Collections
 
 let private manyNSatisfy n p =
     manyMinMaxSatisfy n n p
@@ -307,7 +308,7 @@ let parseFile (path: string) : Solution =
                     VisualStudioVersion = info.VSVersion
                     MinimumVisualStudioVersion = info.MinVSVersion
                     Configurations = cfgs
-                    ProjectsInOrder = projectsInOrder
+                    ProjectsInOrder = OrderedMap.ofSeq (projectsInOrder |> Seq.map (fun p -> (p.Id, p)) )
                     NestedProjectsInOrder = nestedProjectsInOrder
                     Properties = properties
                     Id = slnId }

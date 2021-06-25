@@ -8,8 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Collections/OrderedMap.fs" />
     <Compile Include="Extensions.fs" />
-    <Compile Include="Types.fs" />
+    <Compile Include="Domain.fs" />
     <Compile Include="SolutionParser.fs" />
     <Compile Include="MainView.fs" />
     <Compile Include="Program.fs" />
