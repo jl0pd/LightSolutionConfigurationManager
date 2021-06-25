@@ -1,4 +1,4 @@
-﻿namespace LightSolutionConfigurationManager
+﻿namespace LightSolutionManager
 
 open Elmish
 open Avalonia
@@ -12,7 +12,7 @@ open Avalonia.Input
 type MainWindow() as this =
     inherit HostWindow()
     do
-        base.Title <- "LightSolutionConfigurationManager"
+        base.Title <- "LightSolutionManager"
         base.Width <- 600.0
         base.MinWidth <- 600.0
         base.Height <- 400.0
@@ -26,7 +26,7 @@ type MainWindow() as this =
 #endif
 
 
-        Program.mkProgram Counter.init Counter.update Counter.view
+        Program.mkProgram MainView.init MainView.update MainView.view
         |> Program.withHost this
         |> Program.run
 

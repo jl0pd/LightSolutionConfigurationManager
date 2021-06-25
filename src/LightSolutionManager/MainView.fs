@@ -1,4 +1,4 @@
-﻿module LightSolutionConfigurationManager.Counter
+﻿module LightSolutionManager.MainView
 
 open System
 open Avalonia

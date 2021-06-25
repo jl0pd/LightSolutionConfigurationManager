@@ -1,4 +1,4 @@
-LightSolutionConfigurationManager
+LightSolutionManager
 =================================
 
 Configuration manager for dotnet solution files (`.sln`).
@@ -41,14 +41,14 @@ TODO
 
 :large_blue_circle: **Feature:** Make projects `Configuration|Platform` corresponging to
     solutions `Configuration|Platforms`
-    
+
 :large_blue_circle: **Feature:** Change folder structure, so projects will be displayed according
       to file system folder structure
-      
+
 :large_blue_circle: **Feature:** Move projects to be located same way as in solution explorer
 
   :large_blue_circle: with git support
-  
+
 :large_blue_circle: **UI-design:** Make application look better
 
 :large_blue_circle: **Repo-design:** Contribute changes to MSBuild [issue#1708](https://github.com/dotnet/msbuild/issues/1708)

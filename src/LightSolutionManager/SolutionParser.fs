@@ -1,4 +1,4 @@
-module LightSolutionConfigurationManager.SolutionParser
+module LightSolutionManager.SolutionParser
 
 open System
 open System.Text

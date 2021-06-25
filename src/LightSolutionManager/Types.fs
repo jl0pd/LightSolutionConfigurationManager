@@ -1,4 +1,4 @@
-namespace LightSolutionConfigurationManager
+namespace LightSolutionManager
 
 open System
 open System.Diagnostics

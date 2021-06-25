@@ -1,4 +1,4 @@
-namespace LightSolutionConfigurationManager
+namespace LightSolutionManager
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

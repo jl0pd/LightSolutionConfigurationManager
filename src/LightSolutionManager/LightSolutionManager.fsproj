@@ -11,7 +11,7 @@
     <Compile Include="Extensions.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="SolutionParser.fs" />
-    <Compile Include="Counter.fs" />
+    <Compile Include="MainView.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

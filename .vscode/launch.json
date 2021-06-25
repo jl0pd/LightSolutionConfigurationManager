@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/LightSolutionConfigurationManager/bin/Debug/net5.0/LightSolutionConfigurationManager.dll",
+            "program": "${workspaceFolder}/src/LightSolutionManager/bin/Debug/net5.0/LightSolutionManager.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
