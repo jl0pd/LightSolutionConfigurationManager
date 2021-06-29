@@ -36,6 +36,18 @@ module KeyValue =
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module String =
+    let skip count (str: string) =
+        str.Substring count
+
+    let take count (str: string) =
+        str.Substring(0, count)
+
+    let skipLast count (str: string) =
+        str.Substring(0, str.Length - count)
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Regex =
     open System
     open System.Text.RegularExpressions

@@ -13,6 +13,7 @@ open Elmish
 type ViewState =
     | NoState
     | ProjCfgsState of ProjectConfigurationsView.State
+    | ProjTreeState of SolutionTreeView.State
 
 type LoadedState =
     { State : ViewState
@@ -28,6 +29,7 @@ type ViewMsg =
 type Views =
     | EmptyView
     | ProjCfgsView
+    | ProjTreeView
 
 type Msg =
     | ShowView of Views
@@ -86,6 +88,12 @@ let update (msg: Msg) (state: State) : (State * Cmd<Msg>) =
             Loaded { lo with State = NoState }, Cmd.none
         | NotLoaded -> state, Cmd.none
 
+    | ShowView ProjTreeView ->
+        match state with
+        | Loaded lo ->
+            Loaded { lo with State = ProjTreeState (SolutionTreeView.init lo.Solution) }, Cmd.none
+        | NotLoaded -> state, Cmd.none
+
     | ShowView ProjCfgsView ->
         match state with
         | Loaded ({ Solution = sln } as lo) ->
@@ -119,6 +127,7 @@ let loadedView subView additionalControls showBackButton dispatch =
         StackPanel.create [
             StackPanel.dock Dock.Top
             StackPanel.orientation Orientation.Horizontal
+            StackPanel.background "#222255"
             StackPanel.children [
                 if showBackButton then
                     Button.create [
@@ -155,6 +164,10 @@ let emptyView dispatch =
                 Button.content "Edit project configurations"
                 Button.onClick (fun _ -> dispatch (ShowView ProjCfgsView))
             ]
+            Button.create [
+                Button.content "View project tree"
+                Button.onClick (fun _ -> dispatch (ShowView ProjTreeView))
+            ]
         ]
     ]
 
@@ -165,6 +178,9 @@ let view state dispatch =
 
     | Loaded { State = NoState } ->
         loadedView (emptyView dispatch) [] false dispatch :> IView
+
+    | Loaded { State = ProjTreeState x } ->
+        loadedView (SolutionTreeView.view x ignore) [] true dispatch :> IView
 
     | Loaded { State = ProjCfgsState x } ->
         let (view, additional) = ProjectConfigurationsView.viewPair x (ProjCfgsMsg >> ViewMsg >> dispatch)

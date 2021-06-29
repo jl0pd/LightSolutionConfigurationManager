@@ -74,6 +74,7 @@ type Solution =
       ProjectsInOrder: OrderedMap<Guid, Project>
       NestedProjectsInOrder: Guid list
       Properties: Map<string, string>
+      FileName: string option
       Id: Guid }
 
 [<RequireQualifiedAccess>]

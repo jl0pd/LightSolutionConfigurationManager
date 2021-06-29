@@ -11,6 +11,8 @@
     <Compile Include="Collections/OrderedMap.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Domain.fs" />
+    <Compile Include="SolutionTree/BuildTree.fs" />
+    <Compile Include="SolutionTreeView.fs" />
     <Compile Include="SolutionParser.fs" />
     <Compile Include="ProjectConfigurationsView.fs" />
     <Compile Include="MainView.fs" />

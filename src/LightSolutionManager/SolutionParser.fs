@@ -311,5 +311,6 @@ let parseFile (path: string) : Solution =
                     ProjectsInOrder = OrderedMap.ofSeq (projectsInOrder |> Seq.map (fun p -> (p.Id, p)) )
                     NestedProjectsInOrder = nestedProjectsInOrder
                     Properties = properties
+                    FileName = Some path
                     Id = slnId }
         sln
