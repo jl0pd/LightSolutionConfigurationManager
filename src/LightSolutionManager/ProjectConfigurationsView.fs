@@ -8,6 +8,7 @@ open Avalonia.Layout
 open Avalonia.FuncUI.Components
 open Avalonia.Controls.Primitives
 open Avalonia.FuncUI.Types
+open LightSolutionManager.Extensions
 
 type SearchOptions =
     { Pattern : string

@@ -9,7 +9,9 @@
 
   <ItemGroup>
     <Compile Include="Collections/OrderedMap.fs" />
-    <Compile Include="Extensions.fs" />
+    <Compile Include="Extensions/Collections.fs" />
+    <Compile Include="Extensions/String.fs" />
+    <Compile Include="Extensions/Regex.fs" />
     <Compile Include="Domain.fs" />
     <Compile Include="SolutionTree/BuildTree.fs" />
     <Compile Include="SolutionTreeView.fs" />

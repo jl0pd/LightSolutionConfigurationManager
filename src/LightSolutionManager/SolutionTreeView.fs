@@ -7,6 +7,7 @@ open Avalonia.FuncUI.DSL
 open Avalonia.FuncUI.Components
 open LightSolutionManager.SolutionStructure
 open Avalonia.Controls.Primitives
+open LightSolutionManager.Extensions
 
 type State =
     { Solution : Solution
@@ -38,15 +39,15 @@ let view state dispatch =
                         (fun n -> n.Children :> _ seq),
                         (fun { Project = proj } ->
                             TextBlock.create [
-                                let label = if proj.IsFolder then 
+                                let label = if proj.IsFolder then
                                                 proj.Name
-                                            else 
+                                            else
                                                 let ext =
                                                     proj.Path.OriginalString
                                                     |> Path.GetExtension
                                                     |> String.skip 1
                                                 let kind =
-                                                    if ext.EndsWith "proj" then
+                                                    if ext |> String.Ordinal.endsWith "proj" then
                                                         ext |> String.skipLast 4
                                                     else
                                                         ext

@@ -1,4 +1,4 @@
-namespace LightSolutionManager
+namespace LightSolutionManager.Extensions
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -33,33 +33,3 @@ module KeyValue =
 
     let value (kvp: KeyValuePair<_,_>) = kvp.Value
     let key (kvp: KeyValuePair<_,_>) = kvp.Key
-
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module String =
-    let skip count (str: string) =
-        str.Substring count
-
-    let take count (str: string) =
-        str.Substring(0, count)
-
-    let skipLast count (str: string) =
-        str.Substring(0, str.Length - count)
-
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Regex =
-    open System
-    open System.Text.RegularExpressions
-
-    let isMatch input pattern =
-        try
-            Regex.IsMatch(input, pattern)
-        with
-        | :? ArgumentException -> false
-
-    let isMatchCaseInsensitive input pattern =
-        try
-            Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase)
-        with
-        | :? ArgumentException -> false

@@ -3,6 +3,7 @@ namespace LightSolutionManager.SolutionStructure
 open System
 open System.Collections.Generic
 open LightSolutionManager
+open LightSolutionManager.Extensions
 
 type ProjectNode =
     { Project : Project
@@ -61,7 +62,7 @@ module TreeBuilder =
 
         for KeyValue (id, folder) in groups.Folders do
             mutTree.Folders.[id] <- Folder folder
-        
+
         for rooted in groups.Rooted do
             mutTree.Rooted.Add (
                 if rooted.IsFolder then
@@ -83,10 +84,10 @@ module TreeBuilder =
                 mutTree.Folders.[id].SubProjects.Add proj
 
         let projects = mutTree.Rooted
-                       |> Seq.sortWith (fun left right ->
+                       |> Seq.sortWith (fun left right -> // push folders first
                                             match left, right with
-                                            | FolderF le, FolderF ri -> le.Project.Name.CompareTo ri.Project.Name
-                                            | ProjectP le, ProjectP ri -> le.Name.CompareTo ri.Name
+                                            | FolderF le, FolderF ri -> String.Invariant.compare le.Project.Name ri.Project.Name
+                                            | ProjectP le, ProjectP ri -> String.Invariant.compare le.Name ri.Name
                                             | FolderF _, ProjectP _ -> -1
                                             | ProjectP _, FolderF _ -> 1)
                        |> Seq.map (function
